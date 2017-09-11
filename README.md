@@ -1,2 +1,0 @@
-# foodies
-IDC FOOD APP

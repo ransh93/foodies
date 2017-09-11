@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html >
+<head>
+  <meta charset="UTF-8">
+  <title>Pure JavaScript To-do List</title>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+  
+      <link rel="stylesheet" href="css/styleAddRecipe.css">
+  <style>
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    .switch input {display:none;}
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      -webkit-transition: .4s;
+      transition: .4s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      -webkit-transition: .4s;
+      transition: .4s;
+    }
+
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+      -webkit-transform: translateX(26px);
+      -ms-transform: translateX(26px);
+      transform: translateX(26px);
+    }
+
+    /* Rounded sliders */
+    .slider.round {
+      border-radius: 34px;
+    }
+
+    .slider.round:before {
+      border-radius: 50%;
+    }
+  </style>
+
+  <script>
+
+      document.onreadystatechange = function(){
+          if(document.readyState === 'complete'){
+
+              var saveRecipe = document.getElementById("saveRecipe");
+              saveRecipe.addEventListener('click',saveRecipeAction);
+
+
+              var isShared = document.getElementById("isShared");
+              isShared.addEventListener('click',checkShare);
+          }
+      }
+
+      function checkShare()
+      {
+
+          var selectShare = document.getElementById("selectShare");
+          var isShared = document.getElementById("isShared").checked;
+
+          if(isShared == false)
+          {
+              selectShare.style.display = "none";
+              recipe.access_type = "private";
+          }
+          else
+          {
+              selectShare.style.display = "block";
+              recipe.access_type = "public";
+          }
+      }
+
+      function saveRecipeAction()
+      {
+          var recipeName = document.getElementById("recipeName");
+          var recipeSummery = document.getElementById("recipeSummery");
+          var recipeInstructions = document.getElementById("recipeInstructions");
+
+          recipe.name_of_recipe = recipeName.value;
+          recipe.summery = recipeSummery.value;
+          recipe.recipe_instructions = recipeInstructions.value;
+
+          var userList = [];
+          var users = $('.js-example-basic-multiple').select2('data');
+          for(var i=0; i < users.length; i++)
+          {
+              userList.push(users[i].text);
+          }
+
+          recipe.access_list = userList;
+
+          var jsonRecipe = JSON.stringify(recipe);
+          alert(jsonRecipe);
+          postAddItemAjax(jsonRecipe);
+      }
+
+      function postAddItemAjax(recipe) {
+
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function () {
+              if (this.readyState == 4 && this.status == 200) {
+                  alert("The recipe was added successfully");
+              }
+              else if (this.readyState == 4 && this.status == 301) {
+                  window.location.replace("/public/index.html");
+              }
+              else if (this.readyState == 4 && this.status == 500) {
+                  alert("The item id already exist, try a diffrent one...");
+              }
+          };
+
+
+          //var serial = document.getElementById("serial");
+          //var details = document.getElementById("details");
+          //var count = document.getElementById("count");
+
+          xhttp.open("POST", "/recipe/", true);
+          xhttp.send(recipe);
+      }
+
+      function Recipe(id, name_of_recipe, summery, user_id, access_type, access_list, picture, recipe_instructions)
+      {
+          this.id = id;
+          this.name_of_recipe = name_of_recipe;
+          this.summery = summery;
+          this.user_id = user_id;
+          //this.name_of_owner = valid_cookies[user_id];
+          this.picture = picture;
+          this.recipe_instructions = recipe_instructions;
+          this.access_type = access_type; // Can be private/public
+          this.access_list = access_list; // a list of permited users(uniqe email).
+          this.products = [];
+
+          this.addProduct = function(product) {
+              this.products.push(product);
+          };
+
+          this.removeProduct = function(product) {
+              var index = this.products.indexOf(product);
+              this.products.splice(index, 1);
+          };
+      }
+
+
+      var recipe = new Recipe();
+      recipe.access_type = "private";
+
+  </script>
+  
+</head>
+
+<body>
+  <html>
+  <head>
+    <title>Todo App</title>
+    <!-- <link href='https://fonts.googleapis.com/css?family=Lato:300,400,700' rel='stylesheet' type='text/css'> -->
+    <link rel="stylesheet" href="style.css" type="text/css" media="screen" charset="utf-8">
+  </head>
+  <body>
+
+    <div class="container">
+      <input type="text" id="recipeName"></input>
+      <br><br><br>
+      <textarea id="recipeSummery"></textarea>
+
+      <p>
+        <label for="new-task">Add Item</label><input id="new-task" type="text"><button>Add</button>
+      </p>
+      
+      <h3>Recipe ingredients</h3>
+      <ul id="incomplete-tasks">
+
+      </ul>
+
+      <br><br><br>
+      <textarea id="recipeInstructions"></textarea>
+
+
+
+    </div>
+
+    <div class="container">
+
+      <h2>is shared?</h2>
+      <label class="switch">
+        <input type="checkbox" id="isShared">
+        <span class="slider round"></span>
+      </label>
+      <br><br><br>
+
+      <div id="selectShare" style="display: none">
+      <select class="js-example-basic-multiple" multiple="multiple" style="width: 200px">
+      </select>
+      </div>
+
+
+      <script>
+
+          var data = "";
+          function getAllUsers() {
+
+              var xhttp = new XMLHttpRequest();
+              xhttp.onreadystatechange = function () {
+                  if (this.readyState == 4 && this.status == 200) {
+                      data = JSON.parse(this.responseText);
+                  }
+                  else if (this.readyState == 4 && this.status == 301) {
+                      window.location.replace("/public/index.html");
+                  }
+                  else if (this.readyState == 4 && this.status == 500) {
+
+                  }
+              };
+
+
+              //var serial = document.getElementById("serial");
+              //var details = document.getElementById("details");
+              //var count = document.getElementById("count");
+
+              xhttp.open("GET", "/users/", true);
+              xhttp.send();
+          }
+
+          getAllUsers();
+          $(document).ready(function() {
+              getAllUsers();
+              $(".js-example-basic-multiple").select2({
+                 placeholder: "Select a user to share with",
+                 data:data
+              });
+
+          });
+      </script>
+
+
+
+
+      <button class= "saveRecipe" id="saveRecipe">Save new recipe</button>
+
+
+    </div>
+
+
+    <script type="text/javascript" src="app.js"></script>
+
+  </body>
+</html>
+  
+    <script src="js/AddRecipe.js"></script>
+
+</body>
+</html>
